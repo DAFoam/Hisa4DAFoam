@@ -89,6 +89,74 @@ public:
         scalar psi = (r > 0 ? (r + sqr(r))/(2*r+cd*sqr(1-r)) : scalar(0.0));
         return max(min(min(r/cd, psi), 1.0/cd), 0);
     }
+/*
+    static inline scalar softMax(const scalar a, const scalar b, const scalar eps)
+    {
+        scalar ea = exp(a/eps);
+        scalar eb = exp(b/eps);
+        return (a*ea + b*eb)/(ea + eb + SMALL);
+    }
+    
+    static inline scalar softMin(const scalar a, const scalar b, const scalar eps)
+    {
+        scalar ea = exp(-a/eps);
+        scalar eb = exp(-b/eps);
+        return (a*ea + b*eb)/(ea + eb + SMALL);
+    }
+
+    static inline scalar softAbs_sqrt(const scalar x, const scalar eps)
+    {
+        return sqrt(sqr(x) + sqr(eps));
+    }
+    
+    // Smooth Heaviside for gating r>0
+    static inline scalar smoothH_sqrt(const scalar x, const scalar eps)
+    {
+        return 0.5*(1.0 + x/softAbs_sqrt(x, eps));
+    }
+    
+    // Smoothly floor a denominator to ~eps
+    static inline scalar softFloorDen_sqrt(const scalar den, const scalar eps)
+    {
+        // ≈ max(den, eps) but smooth
+        return 0.5*(den + eps + softAbs_sqrt(den - eps, eps));
+    }
+
+    
+    scalar limiter(
+        const scalar cdWeight,
+        const scalar faceFlux,
+        const typename LimiterFunc::phiType& phiP,
+        const typename LimiterFunc::phiType& phiN,
+        const typename LimiterFunc::gradPhiType& gradcP,
+        const typename LimiterFunc::gradPhiType& gradcN,
+        const vector& d
+    ) const
+    {
+        scalar eps = 1e-2;
+    
+        scalar r = LimiterFunc::r(faceFlux, phiP, phiN, gradcP, gradcN, d);
+        scalar cd = (faceFlux >= 0 ? 1.0-cdWeight : cdWeight);
+
+        // numerator and (softly floored) denominator
+        scalar num   = r + sqr(r);
+        scalar denom = 2.0*r + cd*sqr(1.0 - r) + SMALL;
+        denom = softFloorDen_sqrt(denom, eps);  // smooth, avoids divide-by-near-zero
+        
+        // smooth gate for r>0 (replaces the hard ternary)
+        scalar H = smoothH_sqrt(r, eps);
+        
+        // final smoothed psi
+        scalar psi = H * (num/denom);
+    
+        // Nested smooth min/max
+        scalar val = softMin(r/(cd+SMALL), psi, eps);
+        val = softMin(val, 1.0/(cd+SMALL), eps);
+        val = softMax(val, 0.0, eps);
+    
+        return val;
+    }
+    */
 };
 
 
