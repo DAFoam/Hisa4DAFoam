@@ -141,7 +141,7 @@ namespace Foam
         surfaceScalarField &phiEp,
         surfaceVectorField &Up)
     {
-        Info << "AUSM+M: Updating fluxes!" << endl;
+        // Info << "AUSM+M: Updating fluxes!" << endl;
 
         // Cell surface values
         const surfaceScalarField surface_area("surface_area", mesh_.magSf());
@@ -368,7 +368,7 @@ namespace Foam
         }
 
         // Info << endl;
-        Info << "Done updating fluxes!" << endl;
+        // Info << "Done updating fluxes!" << endl;
         // Info << endl;
     }
 
