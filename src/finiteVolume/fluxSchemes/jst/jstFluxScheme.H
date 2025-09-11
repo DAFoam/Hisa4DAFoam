@@ -28,17 +28,10 @@ Class
     Foam::jstFluxScheme
 
 Description
-    Lax-Friedrichs flux scheme. Note that this is included for academic
-    interest as it is a dissipative, first order scheme and therefore not
-    recommended for production use.
+    JST flux scheme. 
 
 SourceFiles
     jstFluxScheme.C
-
-Authors
-    Johan Heyns
-    Oliver Oxtoby
-        Council for Scientific and Industrial Research, South Africa
 
 \*---------------------------------------------------------------------------*/
 
@@ -72,11 +65,23 @@ protected:
         const volScalarField& rhoE_;
         const dictionary& dict_;
 
+        // fields used for sensors
+        autoPtr<volScalarField> sField_;
+
+        // jst coefficients
         scalar jst_k2_;
         scalar jst_k4_;
 
+        // Cp and R for entropy sensor
         scalar Cp_;
-        scalar molWeight_;
+        scalar R_;
+
+        // references values for entropy calculation
+        dimensionedScalar TRef_;
+        dimensionedScalar pRef_;
+
+        // the name of the shock sensor
+        word sensorName_ = "pressure";
 
 public:
     //- Runtime type information

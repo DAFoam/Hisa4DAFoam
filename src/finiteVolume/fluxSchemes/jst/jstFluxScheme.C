@@ -72,20 +72,26 @@ jstFluxScheme::jstFluxScheme
     U_(U),
     rhoU_(rhoU),
     rhoE_(rhoE),
-    dict_(dict)
+    dict_(dict),
+    sField_(nullptr),
+    TRef_("TRef", dimTemperature, 300.0),
+    pRef_("pRef", dimPressure, 101325.0)
 {
-    //Info << mesh_.thisDb().classes() << endl;
+    // read in parameters
     const IOdictionary& fvSchemes = mesh_.thisDb().lookupObject<IOdictionary>("fvSchemes");
     jst_k2_ = fvSchemes.getScalar("jst_k2");
     jst_k4_ = fvSchemes.getScalar("jst_k4");
+    sensorName_ = fvSchemes.lookupOrDefault<word>("sensorName", "pressure");
 
     // get molWeight and Cp from thermophysicalProperties
     const IOdictionary& thermoDict = mesh_.thisDb().lookupObject<IOdictionary>("thermophysicalProperties");
     dictionary mixSubDict = thermoDict.subDict("mixture");
     dictionary specieSubDict = mixSubDict.subDict("specie");
-    molWeight_ = specieSubDict.getScalar("molWeight");
+    scalar molWeight = specieSubDict.getScalar("molWeight");
     dictionary thermodynamicsSubDict = mixSubDict.subDict("thermodynamics");
     Cp_ = thermodynamicsSubDict.getScalar("Cp");
+    scalar RR = Foam::constant::thermodynamic::RR;
+    R_ = RR / molWeight;
     
 }
 
@@ -115,128 +121,80 @@ void Foam::jstFluxScheme::calcFlux(surfaceScalarField& phi, surfaceVectorField& 
     phiUp.setOriented();
     phiEp.setOriented();
 
-    // Wave speed
+    // local spectral radius at faces  c + |U| * n
     volScalarField c(sqrt(thermo_.gamma()/thermo_.psi()));
-    surfaceScalarField lambdaConv = (fvc::interpolate(c) + mag(fvc::interpolate(U_)&mesh_.Sf()/mesh_.magSf()));
-    // lambdaConv should have no signs
-    lambdaConv.setOriented(false);
+    surfaceScalarField specR = (fvc::interpolate(c) + mag(fvc::interpolate(U_)&mesh_.Sf()/mesh_.magSf()));
+    // specR should have no signs
+    specR.setOriented(false);
 
-    // JST pressure switch
-    /*
-    dimensionedScalar smallP
-    (
-        "smallP",                            
-        dimensionSet(1, -1, -2, 0, 0, 0, 0), 
-        1e-16                     
-    );
-    surfaceScalarField pDiff = mag(fv::orthogonalSnGrad<scalar>(mesh).snGrad(p)) / mesh.deltaCoeffs();
-    surfaceScalarField pSum  = 2.0 * linearInterpolate(p);
-    surfaceScalarField pSensor = pDiff / (pSum + smallP);
-    pSensor.setOriented(false);
-    pSensor = min(max(pSensor, scalar(0)), scalar(1));
-
-    // JST artificial dissipation coefficients
-    surfaceScalarField eps2 = jst_k2_ * pSensor * lambdaConv;
-    eps2.setOriented(false);
-    dimensionedScalar eps_zero
-    (
-        "jst_k4",                            
-        lambdaConv.dimensions(), 
-        0.0                   
-    );
-    surfaceScalarField eps4 = max(eps_zero, jst_k4_*lambdaConv-eps2);
-    eps4.setOriented(false);
-    */
-
-   scalar RR = Foam::constant::thermodynamic::RR;
-
-   scalar R = RR / molWeight_;
+    // shock sensor field: it can be pressure or entropy
+    tmp<volScalarField> sField;
+    if (sensorName_ == "pressure")
+    {
+        sField = p;
+    }
+    else if (sensorName_ == "entropy")
+    {
+        sField = Cp_ * log(T/TRef_) - R_ *log(p/pRef_);
+    }
+    else
+    {
+        FatalErrorIn("") << "sensor " << sensorName_ << " not supported. Options are: pressure or entropy" << exit(FatalError);
+    }
     
-    dimensionedScalar TRef("TRef", dimTemperature, 300.0);
-    dimensionedScalar pRef("pRef", dimPressure,   101325.0);
-
-    volScalarField s = Cp_ * log(T/TRef) - R *log(p/pRef);
+    // calculate the sensor = |s_N - s_P | / |s_N + s_P + eps| we use the first order difference
     dimensionedScalar smallS
     (
-        "smallP",                            
-        s.dimensions(), 
+        "smallS",                            
+        sField->dimensions(), 
         1e-16                     
     );
-    surfaceScalarField sDiff = mag(fv::orthogonalSnGrad<scalar>(mesh).snGrad(s)) / mesh.deltaCoeffs();
-    surfaceScalarField sSum  = 2.0 * linearInterpolate(s);
-    surfaceScalarField sSensor = sDiff / (sSum + smallS);
-    sSensor.setOriented(false);
-    sSensor = min(max(sSensor, scalar(0)), scalar(1));
+    // |s_N - s_P |
+    surfaceScalarField sDiff = mag(fv::orthogonalSnGrad<scalar>(mesh).snGrad(sField())) / mesh.deltaCoeffs();
+    // |s_N + s_P |
+    surfaceScalarField sSum  = 2.0 * linearInterpolate(sField());
+    surfaceScalarField sensor = sDiff / (sSum + smallS);
+    sensor.setOriented(false);
+    // bound it between 0 and 1
+    sensor = min(max(sensor, scalar(0)), scalar(1));
 
-    surfaceScalarField eps2 = jst_k2_ * sSensor * lambdaConv;
+    // JST artificial dissipation coefficients
+    surfaceScalarField eps2 = jst_k2_ * sensor;
     eps2.setOriented(false);
-    dimensionedScalar eps_zero
-    (
-        "jst_k4",                            
-        lambdaConv.dimensions(), 
-        0.0                   
-    );
-    surfaceScalarField eps4 = max(eps_zero, jst_k4_*lambdaConv-eps2);
+    surfaceScalarField eps4 = max(scalar(0.0), jst_k4_-eps2);
     eps4.setOriented(false);
-
-    // delta = snGrad * d. we have to force to use the ortho snGrad without any corrections
-    surfaceScalarField deltaRhoPhi = fv::orthogonalSnGrad<scalar>(mesh).snGrad(rho_) / mesh.deltaCoeffs(); 
-    surfaceVectorField deltaRhoUPhi = fv::orthogonalSnGrad<vector>(mesh).snGrad(rhoU_) / mesh.deltaCoeffs(); 
-    surfaceScalarField deltaRhoEPhi = fv::orthogonalSnGrad<scalar>(mesh).snGrad(rhoE_) / mesh.deltaCoeffs(); 
-    deltaRhoPhi.setOriented();
-    deltaRhoUPhi.setOriented();
-    deltaRhoEPhi.setOriented();
-
-    /*
-    volScalarField meshV
-    (
-        IOobject
-        (
-            "meshV",
-            mesh.time().timeName(),
-            mesh,
-            IOobject::NO_READ,
-            IOobject::NO_WRITE
-        ),
-        mesh,
-        dimensionedScalar("zero", dimVolume, 0.0),
-        "zeroGradient"
-    );
     
-    meshV.primitiveFieldRef() = mesh.V();
-    meshV.correctBoundaryConditions();
-
-    volScalarField LRef = pow(meshV, 1.0/3.0);
-    // LRef / d
-    surfaceScalarField stretch = pow(linearInterpolate(LRef) * mesh.deltaCoeffs(), -2.0); 
-    stretch.setOriented(false);
-    stretch = min(scalar(1.0), max(scalar(0.01), stretch));
-    */
+    // dPhi = snGrad * d. we have to force to use the ortho snGrad without any corrections
+    surfaceScalarField dRho = fv::orthogonalSnGrad<scalar>(mesh).snGrad(rho_) / mesh.deltaCoeffs(); 
+    surfaceVectorField dRhoU = fv::orthogonalSnGrad<vector>(mesh).snGrad(rhoU_) / mesh.deltaCoeffs(); 
+    surfaceScalarField dRhoE = fv::orthogonalSnGrad<scalar>(mesh).snGrad(rhoE_) / mesh.deltaCoeffs(); 
+    dRho.setOriented();
+    dRhoU.setOriented();
+    dRhoE.setOriented();
     
-    /*
-    // sum over all face to get delta-Rho for each cell
-    // volScalarField D2Rho = fvc::div(deltaRhoPhi * mesh.magSf());
-    // volVectorField D2RhoU = fvc::div(deltaRhoUPhi * mesh.magSf());
-    // volScalarField D2RhoE = fvc::div(deltaRhoEPhi * mesh.magSf());
-    */
+    // sum over all face to get d2Rho_dx for each cell
+    // NOTE: the fvc::div operator sums over all the face (without multiplying the area) and then divide it by the volume
+    // So we have to manually multiply the surface area
+    volScalarField d2Rho_dx = fvc::div(dRho * mesh.magSf());
+    volVectorField d2RhoU_dx = fvc::div(dRhoU * mesh.magSf());
+    volScalarField d2RhoE_dx = fvc::div(dRhoE * mesh.magSf());
 
-    dimensionedScalar oneCoeff("oneCoeff", dimless, 1.0);
-    volScalarField D2Rho = fvc::laplacian(oneCoeff, rho_, "laplacian(jst)");
-    volVectorField D2RhoU = fvc::laplacian(oneCoeff, rhoU_, "laplacian(jst)");
-    volScalarField D2RhoE = fvc::laplacian(oneCoeff, rhoE_, "laplacian(jst)");
-
-    // apply the snGrad on the delta-Rho to get fourth order dissipation term
-    surfaceScalarField deltaD2RhoPhi = fv::orthogonalSnGrad<scalar>(mesh).snGrad(D2Rho) / mesh.deltaCoeffs() / mesh.deltaCoeffs() / mesh.deltaCoeffs();    
-    surfaceVectorField deltaD2RhoUPhi = fv::orthogonalSnGrad<vector>(mesh).snGrad(D2RhoU) / mesh.deltaCoeffs() / mesh.deltaCoeffs() / mesh.deltaCoeffs();    
-    surfaceScalarField deltaD2RhoEPhi = fv::orthogonalSnGrad<scalar>(mesh).snGrad(D2RhoE) / mesh.deltaCoeffs() / mesh.deltaCoeffs() / mesh.deltaCoeffs();  
-    deltaD2RhoPhi.setOriented();
-    deltaD2RhoUPhi.setOriented();
-    deltaD2RhoEPhi.setOriented();
+    // apply the snGrad on the d2Rho_dx to get 3rd order differences
+    // Note we have to do two mesh.deltaCoeffs() here because the first one is for snGrad and the 2nd one
+    // is for d2Rho_dx (we want difference d2Rho, not d2Rho/dx). This makes sure the unit for d3Rho is the same as rho
+    surfaceScalarField d3Rho = fv::orthogonalSnGrad<scalar>(mesh).snGrad(d2Rho_dx) / mesh.deltaCoeffs() / mesh.deltaCoeffs();    
+    surfaceVectorField d3RhoU = fv::orthogonalSnGrad<vector>(mesh).snGrad(d2RhoU_dx) / mesh.deltaCoeffs() / mesh.deltaCoeffs();    
+    surfaceScalarField d3RhoE = fv::orthogonalSnGrad<scalar>(mesh).snGrad(d2RhoE_dx) / mesh.deltaCoeffs() / mesh.deltaCoeffs();  
+    d3Rho.setOriented();
+    d3RhoU.setOriented();
+    d3RhoE.setOriented();
     
-    // add the artificial terms
-    phi -= (eps2 * deltaRhoPhi - eps4 * deltaD2RhoPhi)*mesh.magSf();
-    phiUp -= (eps2 * deltaRhoUPhi - eps4 * deltaD2RhoUPhi)*mesh.magSf();
-    phiEp -= (eps2 * deltaRhoEPhi - eps4 * deltaD2RhoEPhi)*mesh.magSf();
+    // add the artificial fluxes:
+    // Note when integrating the dRho fluxes over the control volume, we get d2Rho/dx2 (2nd order dissipation)
+    // same applies to d3Rho, integrating it will get d4Rho/dx4 (fourth order dissipation)
+    phi -= (eps2 * dRho - eps4 * d3Rho) * mesh.magSf() * specR;
+    phiUp -= (eps2 * dRhoU - eps4 * d3RhoU) * mesh.magSf() * specR;
+    phiEp -= (eps2 * dRhoE - eps4 * d3RhoE) * mesh.magSf() * specR;
 
     // Face velocity for sigmaDotU (turbulence term)
     Up = linearInterpolate(U_)*mesh_.magSf();
