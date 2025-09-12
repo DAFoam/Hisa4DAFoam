@@ -65,9 +65,6 @@ protected:
         const volScalarField& rhoE_;
         const dictionary& dict_;
 
-        // fields used for sensors
-        autoPtr<volScalarField> sField_;
-
         // jst coefficients
         scalar jst_k2_;
         scalar jst_k4_;

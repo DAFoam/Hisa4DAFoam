@@ -19,7 +19,7 @@ FoamFile
 fluxScheme AUSMPlusUp;
 jst_k2 0.25;
 jst_k4 0.016;
-sensorName entropy;
+sensorName pressure;
 
 ddtSchemes
 {

@@ -73,7 +73,6 @@ jstFluxScheme::jstFluxScheme
     rhoU_(rhoU),
     rhoE_(rhoE),
     dict_(dict),
-    sField_(nullptr),
     TRef_("TRef", dimTemperature, 300.0),
     pRef_("pRef", dimPressure, 101325.0)
 {
@@ -128,14 +127,15 @@ void Foam::jstFluxScheme::calcFlux(surfaceScalarField& phi, surfaceVectorField& 
     specR.setOriented(false);
 
     // shock sensor field: it can be pressure or entropy
-    tmp<volScalarField> sField;
+    volScalarField sField("sField", p);
     if (sensorName_ == "pressure")
     {
-        sField = p;
+        // do nothing
     }
     else if (sensorName_ == "entropy")
     {
         sField = Cp_ * log(T/TRef_) - R_ *log(p/pRef_);
+        sField.correctBoundaryConditions();
     }
     else
     {
@@ -146,13 +146,13 @@ void Foam::jstFluxScheme::calcFlux(surfaceScalarField& phi, surfaceVectorField& 
     dimensionedScalar smallS
     (
         "smallS",                            
-        sField->dimensions(), 
+        sField.dimensions(), 
         1e-16                     
     );
     // |s_N - s_P |
-    surfaceScalarField sDiff = mag(fv::orthogonalSnGrad<scalar>(mesh).snGrad(sField())) / mesh.deltaCoeffs();
+    surfaceScalarField sDiff = mag(fv::orthogonalSnGrad<scalar>(mesh).snGrad(sField)) / mesh.deltaCoeffs();
     // |s_N + s_P |
-    surfaceScalarField sSum  = 2.0 * linearInterpolate(sField());
+    surfaceScalarField sSum  = 2.0 * linearInterpolate(sField);
     surfaceScalarField sensor = sDiff / (sSum + smallS);
     sensor.setOriented(false);
     // bound it between 0 and 1
