@@ -2,6 +2,7 @@
 
 #set -e
 
+# ********* airfoil
 cd airfoil
 rm -rf processor*
 decomposePar
@@ -19,4 +20,12 @@ python verify_jst.py
 
 sed -i 's/JST/AUSMPlusUp/g' system/fvSchemes
 
+cd ..
 
+# ********* airfoil unsteady
+cd airfoil_unsteady
+rm -rf processor*
+decomposePar
+mpirun -np 2 hisa -parallel 2>&1 | tee log.txt
+
+python verify.py

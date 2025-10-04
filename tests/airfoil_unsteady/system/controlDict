@@ -1,0 +1,81 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+|                                                                             |
+|    HiSA: High Speed Aerodynamic solver                                      |
+|    Copyright (C) 2014-2017 Johan Heyns - CSIR, South Africa                 |
+|    Copyright (C) 2014-2017 Oliver Oxtoby - CSIR, South Africa               |
+|                                                                             |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    location    "system";
+    object      controlDict;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+application       hisa;
+
+startFrom         startTime;
+
+startTime         0;
+
+stopAt            endTime;
+
+endTime           1e-5;
+
+deltaT            1e-6;
+
+adjustTimeStep    no;
+
+writeControl      timeStep;
+
+maxCo             10;
+
+maxDeltaT         1e-3;      // Mode 2 period ~ 2.5e-2
+
+writeInterval     10;
+
+purgeWrite        0;
+
+writeFormat       ascii;
+
+writePrecision    8;
+
+writeCompression  off;
+
+timeFormat        general;
+
+timePrecision     8;
+
+runTimeModifiable true;
+
+functions
+{
+    forces
+    {
+        type            forceCoeffs;
+        libs ( "libforces.so" );
+        writeControl   timeStep;
+        writeInterval  1;
+
+        patches
+        (
+            wall_4
+        );
+
+        log         true;
+        rhoInf      1;
+        rho         rhoInf;
+        CofR        (0 0 0);
+        liftDir     (-0.239733 0.970839 0);
+        dragDir     (0.970839 0.239733 0);
+        pitchAxis   (0 0 1);
+        magUInf     618.022;
+        lRef        1;
+        Aref        1;
+    }
+}
+
+// ************************************************************************* //
