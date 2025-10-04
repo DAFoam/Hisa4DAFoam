@@ -47,6 +47,7 @@ Authors
 #include "solverModule.H"
 #include "argList.H"
 #include "timeSelector.H"
+#include "turbulentFluidThermoModel.H"
 
 using namespace Foam; 
 
@@ -176,6 +177,12 @@ int main(int argc, char *argv[])
         {
 #endif
             solver.outerIteration();
+
+            // NOTE: we removed the turbulence correct in hisaModule, so we need to call it here 
+            // NOTE: this trick works for ESI version of OpenFOAM only!
+            compressible::turbulenceModel& turbulence = mesh.thisDb().lookupObjectRef<compressible::turbulenceModel>("turbulenceProperties");
+            turbulence.correct();
+
             if (steadyState)
             {
                 break;

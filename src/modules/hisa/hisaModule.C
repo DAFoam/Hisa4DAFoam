@@ -766,6 +766,9 @@ void hisaModule::outerIteration()
     // Update fields
     #include "updateFields.H"
 
+    // NOTE: we need to call these outside of the outerIteration function
+    // This is mostly for DAFoam to control turbulence_->correct();
+/*
     // Correct turbulence
     turbulence_->correct();
 #if FOUNDATION >= 8
@@ -775,6 +778,7 @@ void hisaModule::outerIteration()
     thermophysicalTransport_->predict();
     #endif
 #endif
+*/
 }
 
 void hisaModule::findDebugCell()

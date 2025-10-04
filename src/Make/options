@@ -26,7 +26,6 @@ LIB_LIBS = \
     -lcompressibleTurbulenceModels$(WM_CODI_AD_LIB_POSTFIX) \
     -lfluidThermophysicalModels$(WM_CODI_AD_LIB_POSTFIX) \
     -lspecie$(WM_CODI_AD_LIB_POSTFIX) \
-    -lcompressibleTurbulenceModels$(WM_CODI_AD_LIB_POSTFIX) \
     -ltopoChangerFvMesh$(WM_CODI_AD_LIB_POSTFIX) \
     -ldecompositionMethods$(WM_CODI_AD_LIB_POSTFIX) \
     -L$(FOAM_LIBBIN)/dummy -lptscotchDecomp$(WM_CODI_AD_LIB_POSTFIX)

@@ -8,11 +8,16 @@ EXE_INC = \
     $(FOAM_VERSION) \
     -I$(LIB_SRC)/finiteVolume/lnInclude \
     -I$(LIB_SRC)/meshTools/lnInclude \
+    -I$(LIB_SRC)/thermophysicalModels/basic/lnInclude \
+    -I$(LIB_SRC)/thermophysicalModels/specie/lnInclude \
+    $(TURB_INC) \
     -I../../../src/lnInclude
 
 EXE_LIBS = \
     -lfiniteVolume \
     -lmeshTools \
+    -lcompressibleTransportModels \
+    -lcompressibleTurbulenceModels \
     -L$(DAFOAM_ROOT_PATH)/OpenFOAM/sharedLibs -lHisaSolver \
 
 ifeq ($(shell expr $(MAJ_VER) \>= 2206), 1)
