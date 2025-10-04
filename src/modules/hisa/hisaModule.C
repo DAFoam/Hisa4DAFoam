@@ -133,7 +133,7 @@ hisaModule::hisaModule
     time_(t),
     mesh_(mesh)
 {
-    printInfo_ = mesh.time().controlDict().lookupOrDefault<label>("HiSAPrint", 1);
+    printInterval_ = mesh.time().controlDict().lookupOrDefault<label>("HisaPrintInterval", 1);
 }
 
 hisaModule::hisaModule
@@ -148,7 +148,7 @@ hisaModule::hisaModule
     time_(t),
     mesh_(mesh)
 {
-    printInfo_ = mesh.time().controlDict().lookupOrDefault<label>("HiSAPrint", 1);
+    printInterval_ = mesh.time().controlDict().lookupOrDefault<label>("HisaPrintInterval", 1);
 }
 
 // * * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * //

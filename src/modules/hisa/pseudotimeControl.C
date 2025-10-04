@@ -170,7 +170,7 @@ Foam::pseudotimeControl::pseudotimeControl(fvMesh& mesh, const bool steadyState,
         << nl;
     Info<< endl;
 
-    printInfo_ = mesh.time().controlDict().lookupOrDefault<label>("HiSAPrint", 1);
+    printInterval_ = mesh.time().controlDict().lookupOrDefault<label>("HisaPrintInterval", 1);
 }
 
 
@@ -278,7 +278,7 @@ bool Foam::pseudotimeControl::loop()
         {
             if (nCorrOuter_ != 1)
             {
-                if (printInfo_)
+                if (mesh_.time().timeIndex() % printInterval_ == 0 || this->mesh_.time().timeIndex() == 1)
                 {
                     Info<< algorithmName_ << ": iteration " << corr_ << endl;
                 }

@@ -220,7 +220,7 @@ protected:
         //- Search for debug point specified in controlDict
         void findDebugCell();
 
-        label printInfo_ = 1;
+        label printInterval_ = 1;
 
 public:
 

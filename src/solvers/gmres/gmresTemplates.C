@@ -84,7 +84,7 @@ gmres<nScalar, nVector>::gmres
 :
     hisaSolver<nScalar, nVector>(typeName, dict, jacobian, preconditioner, defaultTol)
 {
-    printInfo_ = this->mesh_.time().controlDict().template lookupOrDefault<Foam::label>("HiSAPrint", Foam::label(1));
+    printInterval_ = this->mesh_.time().controlDict().template lookupOrDefault<Foam::label>("HisaPrintInterval", Foam::label(1));
 }
 
 
@@ -129,7 +129,7 @@ label gmres<nScalar, nVector>::solve
         }
     }
 
-    if (printInfo_)
+    if (this->mesh_.time().timeIndex() % printInterval_ == 0 || this->mesh_.time().timeIndex() == 1)
     {
         Info<< "Solving for (";
         const labelList& residualOrdering = tol.residualOrdering();
@@ -421,7 +421,7 @@ label gmres<nScalar, nVector>::solve
 
         if (solverIter == 0 || solverStop)
         {
-            if (printInfo_)
+            if (this->mesh_.time().timeIndex() % printInterval_ == 0 || this->mesh_.time().timeIndex() == 1)
             {
                 Info<< "  GMRES iteration: " << solverIter << "   Residual: ";
                 Info<< finalRes;

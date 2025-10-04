@@ -69,7 +69,7 @@ class gmres
 
         inline void givensRotation(const scalar& h, const scalar& beta, scalar& c, scalar& s) const;
 
-        label printInfo_ = 1;
+        label printInterval_ = 1;
         
     public:
         //- Runtime type information
