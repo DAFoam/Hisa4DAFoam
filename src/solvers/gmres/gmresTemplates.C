@@ -480,7 +480,7 @@ label gmres<nScalar, nVector>::solve
             //Perform delayed normalisation of sV and sTmp
             if 
             (
-                Pstream::parRun() && reduceRequest[0] != -1
+                Pstream::parRun() && !Pstream::finishedRequest(reduceRequest[0])
             )
             {
                 Pstream::waitRequest(reduceRequest[0]);
@@ -534,7 +534,7 @@ label gmres<nScalar, nVector>::solve
             {
                 if 
                 (
-                    Pstream::parRun() && reduceRequest[j] != -1
+                    Pstream::parRun() && !Pstream::finishedRequest(reduceRequest[j])
                 )
                 {
                     Pstream::waitRequest(reduceRequest[j]);
@@ -575,7 +575,7 @@ label gmres<nScalar, nVector>::solve
 
         }
 
-        if (Pstream::parRun() && reduceRequest[0] != -1)
+        if (Pstream::parRun() && !Pstream::finishedRequest(reduceRequest[0]))
         {
             Pstream::waitRequest(reduceRequest[0]);
         }
