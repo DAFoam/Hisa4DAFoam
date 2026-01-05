@@ -4,9 +4,9 @@ f.close()
 
 CD = []
 for line in lines:
-    if "Cd       :" in line:
+    if "Cd:" in line:
         cols = line.split()
-        CD.append(float(cols[2]))
+        CD.append(float(cols[1]))
 print(CD)
 CD_Final = CD[-1]
 

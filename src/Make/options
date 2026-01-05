@@ -17,15 +17,15 @@ EXE_INC = \
     -I$(LIB_SRC)/parallel/decompose/decompositionMethods/lnInclude
 
 LIB_LIBS = \
-    -lOpenFOAM$(WM_CODI_AD_LIB_POSTFIX) \
-    -lfiniteVolume$(WM_CODI_AD_LIB_POSTFIX) \
-    -lmeshTools$(WM_CODI_AD_LIB_POSTFIX) \
-    -ldynamicMesh$(WM_CODI_AD_LIB_POSTFIX) \
-    -lcompressibleTransportModels$(WM_CODI_AD_LIB_POSTFIX) \
-    -lcompressibleTurbulenceModels$(WM_CODI_AD_LIB_POSTFIX) \
-    -lfluidThermophysicalModels$(WM_CODI_AD_LIB_POSTFIX) \
-    -lspecie$(WM_CODI_AD_LIB_POSTFIX) \
-    -ltopoChangerFvMesh$(WM_CODI_AD_LIB_POSTFIX) \
-    -ldecompositionMethods$(WM_CODI_AD_LIB_POSTFIX) \
-    -L$(FOAM_LIBBIN)/dummy -lptscotchDecomp$(WM_CODI_AD_LIB_POSTFIX)
+    -lOpenFOAM$(WM_AD_MODE) \
+    -lfiniteVolume$(WM_AD_MODE) \
+    -lmeshTools$(WM_AD_MODE) \
+    -ldynamicMesh$(WM_AD_MODE) \
+    -lcompressibleTransportModels$(WM_AD_MODE) \
+    -lcompressibleTurbulenceModels$(WM_AD_MODE) \
+    -lfluidThermophysicalModels$(WM_AD_MODE) \
+    -lspecie$(WM_AD_MODE) \
+    -ltopoChangerFvMesh$(WM_AD_MODE) \
+    -ldecompositionMethods$(WM_AD_MODE) \
+    -L$(FOAM_LIBBIN)/dummy -lptscotchDecomp$(WM_AD_MODE)
 

@@ -756,7 +756,7 @@ void hisaModule::outerIteration()
         pseudoCoDamping_() *= factor;
         pseudoCoDamping_() = min(scalar(1), pseudoCoDamping_());
         pseudoCoDamping_() =
-            max(pseudoCoNumMin_/pseudoCoNum_(), pseudoCoDamping_());
+            max(dimensionedScalar(pseudoCoNumMin_)/pseudoCoNum_(), pseudoCoDamping_());
     }
 
     //phiUp_.clear();

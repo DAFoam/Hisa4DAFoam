@@ -6,22 +6,22 @@ on:
       - main
 
 env:
-  DOCKER_ENV_FILE: '/home/dafoamuser/dafoam/loadDAFoam.sh'
+  DOCKER_ENV_FILE: '/home/dockeruser/dafoam/loadDAFoam.sh'
 
 jobs:
   push_to_registry:
     name: Deploy
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
     - uses: actions/checkout@v3
     - name: Build and push
       run: |
         echo ${{ secrets.DOCKER_PASSWORD }} | docker login -u dafoam --password-stdin
-        docker pull dafoam/opt-packages:latest
-        docker run -i -d -u dafoamuser --name build_latest dafoam/opt-packages:latest /bin/bash
-        docker exec -i build_latest /bin/bash -c ". ${{env.DOCKER_ENV_FILE}} && cd /home/dafoamuser/dafoam/OpenFOAM && rm -rf Hisa4DAFoam && git clone https://github.com/DAFoam/Hisa4DAFoam.git && cd Hisa4DAFoam && ./Allmake && rm -rf src/Make/linux64*"
-        docker export build_latest > build_latest.tar
+        docker pull dafoam/opt-packages:v5
+        docker run -i -d -u dockeruser --name build_latest dafoam/opt-packages:v5 /bin/bash
+        docker exec -i build_latest /bin/bash -c ". ${{env.DOCKER_ENV_FILE}} && cd /home/dockeruser/dafoam/OpenFOAM && rm -rf Hisa4DAFoam && git clone https://github.com/DAFoam/Hisa4DAFoam.git && cd Hisa4DAFoam && ./Allmake && rm -rf src/Make/linux64* .git"
+        docker export build_latest | docker import - dafoam/opt-packages:v5new
         docker rm -f $(docker ps -a -q)
-        docker rmi -f dafoam/opt-packages:latest
-        docker import build_latest.tar dafoam/opt-packages:latest
-        docker push dafoam/opt-packages:latest
+        docker rmi -f dafoam/opt-packages:v5
+        docker tag dafoam/opt-packages:v5new dafoam/opt-packages:v5
+        docker push dafoam/opt-packages:v5
