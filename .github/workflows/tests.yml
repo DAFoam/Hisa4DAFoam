@@ -6,7 +6,7 @@ env:
   REPO_NAME: 'hisa4dafoam'
   DOCKER_WORKING_DIR: '/home/dockeruser/dafoam/$REPO_NAME'
   DOCKER_MOUNT_DIR: '/home/dockeruser/mount/$REPO_NAME'
-  DOCKER_TAG: 'v5'
+  DOCKER_TAG: 'latest'
   DOCKER_ENV_FILE: '/home/dockeruser/dafoam/loadDAFoam.sh'
 
 jobs:
