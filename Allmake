@@ -19,12 +19,16 @@ source $DAFOAM_ROOT_PATH/OpenFOAM/OpenFOAM-AD/etc/bashrc
 
 cd src && wmake -j && cd -
 
-#echo "***************** Compiling ADF mode **************"
-source $DAFOAM_ROOT_PATH/loadDAFoam.sh
-sed -i 's/export WM_AD_MODE=.*/export WM_AD_MODE=ADF/' $DAFOAM_ROOT_PATH/OpenFOAM/OpenFOAM-AD/etc/bashrc
-source $DAFOAM_ROOT_PATH/OpenFOAM/OpenFOAM-AD/etc/bashrc
+if [ -z "$COMPILE_DAFOAM_ADF" ]; then
+  echo "COMPILE_DAFOAM_ADF is not set. skip the ADF mode"
+else
+  echo "***************** Compiling ADF mode **************"
+  source $DAFOAM_ROOT_PATH/loadDAFoam.sh
+  sed -i 's/export WM_AD_MODE=.*/export WM_AD_MODE=ADF/' $DAFOAM_ROOT_PATH/OpenFOAM/OpenFOAM-AD/etc/bashrc
+  source $DAFOAM_ROOT_PATH/OpenFOAM/OpenFOAM-AD/etc/bashrc
 
-cd src && wmake -j && cd -
+  cd src && wmake -j && cd -
+fi
 
 # reset the OpenFOAM environment to the original mode
 source $DAFOAM_ROOT_PATH/loadDAFoam.sh
