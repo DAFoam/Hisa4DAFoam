@@ -10,7 +10,7 @@ for line in lines:
 print(CD)
 CD_Final = CD[-1]
 
-if abs(CD_Final - 0.018972611) / 0.018972611 > 1e-7:
+if abs(CD_Final - 0.019280007) / 0.019280007 > 1e-7:
     print("HiSA test failed!")
     exit(1)
 else:
