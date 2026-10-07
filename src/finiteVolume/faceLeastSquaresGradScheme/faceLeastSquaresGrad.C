@@ -36,7 +36,7 @@ License
 #else
 #include "GeometricField.H"
 #endif
-#include "zeroGradientFvPatchField.H"
+#include "extrapolatedCalculatedFvPatchField.H"
 #include "zeroField.H"
 #include "fvcSurfaceIntegrate.H"
 #include "fixedGradientFvPatchField.H"
@@ -94,7 +94,7 @@ Foam::fv::faceLeastSquaresGrad<Type>::calcGrad
                 vsf.dimensions()/dimLength,
                 pTraits<GradType>::zero
             ),
-            zeroGradientFvPatchField<GradType>::typeName
+            extrapolatedCalculatedFvPatchField<GradType>::typeName
         )
     );
     GeometricField<GradType, fvPatchField, volMesh>& lsGrad = tlsGrad.ref();
@@ -186,6 +186,7 @@ Foam::fv::faceLeastSquaresGrad<Type>::calcGrad
     }
 
     lsGrad.correctBoundaryConditions();
+    gaussGrad<Type>::correctBoundaryConditions(vsf, lsGrad);
 
     return tlsGrad;
 }
